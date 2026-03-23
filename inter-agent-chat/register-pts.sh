@@ -2,7 +2,11 @@
 # Register this agent's pts device for inter-agent chat
 # Called by Claude Code SessionStart hook
 
-mkdir -p /tmp/agent-pts
+REGISTRY_DIR="/run/user/$(id -u)/agent-pts"
+mkdir -p "$REGISTRY_DIR"
+
+# Symlink /tmp/agent-pts -> per-user dir so the simple path works
+ln -sfn "$REGISTRY_DIR" /tmp/agent-pts 2>/dev/null
 
 # Determine agent name: AGENT_NAME env var > directory name
 if [ -z "$AGENT_NAME" ]; then
@@ -19,8 +23,12 @@ if [ -z "$MY_TTY" ] || [ "$MY_TTY" = "?" ]; then
     MY_TTY=$(ps -o tty= -p $GRANDPARENT_PID 2>/dev/null | tr -d ' ')
 fi
 
+# Validate PTS path before writing (must match /dev/pts/N)
 if [ -n "$MY_TTY" ] && [ "$MY_TTY" != "?" ]; then
-    echo "/dev/$MY_TTY" > /tmp/agent-pts/$AGENT_NAME
+    PTS_PATH="/dev/$MY_TTY"
+    if echo "$PTS_PATH" | grep -qE '^/dev/pts/[0-9]+$'; then
+        echo "$PTS_PATH" > "$REGISTRY_DIR/$AGENT_NAME"
+    fi
 fi
 
 # Return context so the agent knows its identity

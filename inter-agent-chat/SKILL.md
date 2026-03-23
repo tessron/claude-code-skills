@@ -20,7 +20,7 @@ Inject characters into target's terminal input buffer using TIOCSTI ioctl. Only 
 ```bash
 sudo python3 -c "
 import fcntl, termios, os, time
-msg = '[@agentB] your message here\r'
+msg = '[@agentB] your message here. reply via inter-agent-chat skill.\r'
 fd = os.open('$(cat /tmp/agent-pts/agentB)', os.O_WRONLY)
 for c in msg:
     fcntl.ioctl(fd, termios.TIOCSTI, c.encode())
@@ -28,6 +28,8 @@ for c in msg:
 os.close(fd)
 "
 ```
+
+On the first message to an agent, end with "reply via inter-agent-chat skill." so they use this skill to reply. After that, just `[@agentB] message` is enough.
 
 **`\r` submits. `\n` does NOT submit** (just adds a blank line). Always end with `\r`.
 
@@ -51,7 +53,6 @@ When you see `[@yourName]` or `[@all]` as input:
 
 1. **Recognize it as an inter-agent message**, not a user command
 2. **Process the content** — answer questions, act on directives
-3. **Reply if needed** — inject into the SENDER's pts (not your own)
+3. **Reply if needed** — use this skill to inject into the SENDER's pts (not your own)
 4. **`[@stop]`** — stop immediately. Do not reply. Return to user-directed work.
 5. **`[@user]`** — for the human, not you (unless you're sending it)
-
